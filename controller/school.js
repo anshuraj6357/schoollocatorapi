@@ -8,6 +8,8 @@ const connection = require('../config/database');
 const createSchool = async (req, res) => {
     try {
         const { name, address, latitude, longitude } = req.body;
+        const userId = req.user.id;
+        console.log("userId", userId)
 
         if (!name || !address || !latitude || !longitude) {
             return res.status(400).json({
@@ -24,10 +26,16 @@ const createSchool = async (req, res) => {
                 message: `this school is alreasy registered`
             })
         }
-
         const [result] = await connection.query(
             'INSERT INTO school (name, address, latitude, longitude) VALUES (?, ?, ?, ?)',
             [name, address, latitude, longitude]
+        );
+        const school_id = result.insertId
+
+        console.log(school_id);
+        await connection.query(
+            "INSERT INTO user_school (user_id, school_id) VALUES (?, ?)",
+            [userId, school_id]
         );
 
         return res.status(201).json({
@@ -36,6 +44,46 @@ const createSchool = async (req, res) => {
             id: result.insertId,
             result
         });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+    }
+};
+
+const updateSchools = async (req, res) => {
+
+    try {
+
+        const { id } = req.params;
+        const userId = req.user.id
+        const { name, address, lattitude, longitude } = req.body
+        const [findschoolcreator] = await connection.query('select * FROM user_school where school_id=? AND user_id=?', [id, userId]);
+        console.log(findschoolcreator)
+       if (findschoolcreator.length === 0) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not authorized to update this school"
+            });
+        }
+        const [updateschool] = await connection.query(
+            'UPDATE school SET name=?,address=?,latitude=?,longitude=? WHERE id=?',
+            [name, address, lattitude, longitude, id])
+
+        if (updateschool.affectedRows === 0) {
+            return res.status(400).jso({
+                success: false,
+                message: `not able to update the school`
+            })
+        }
+
+        return res.status(201).json({
+            success: true,
+            message: `school updated successfully`,
+        })
 
     } catch (error) {
         console.error(error);
@@ -103,4 +151,4 @@ const getAllSchoolBydistance = async (req, res) => {
         });
     }
 };
-module.exports = { createSchool, getAllSchoolBydistance }
+module.exports = { createSchool, getAllSchoolBydistance, updateSchools }
