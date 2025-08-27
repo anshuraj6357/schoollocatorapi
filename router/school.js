@@ -1,21 +1,23 @@
-const express=require('express')
-const {createSchool,getAllSchoolBydistance,updateSchools}= require("../controller/school")
-const {userValidate}=require('../middleware/userValidate');
+const express = require('express');
+const router = express.Router();
 
-const router =express.Router()
+// Import controller functions
+const { createSchool, getAllSchoolBydistance, updateSchools } = require('../controller/school');
 
-//create school router 
-router.post('/create-school',userValidate,createSchool)
+// Import middleware
+const { userValidate } = require ('../middleware/uservalidate');
 
-//update school router
-router.post('/update-school',userValidate,updateSchools)
+// ------------------------
+// Routes
+// ------------------------
 
-//get all school router 
+// Create a new school (Authenticated)
+router.post('/create-school', userValidate, createSchool);
 
-router.post('/all-school',getAllSchoolBydistance)
+// Update an existing school (Authenticated)
+router.post('/update-school', userValidate, updateSchools);
 
+// Get all schools sorted by distance (Public)
+router.get('/all-school', getAllSchoolBydistance);
 
-
-
-
-module.exports=router
+module.exports = router;
