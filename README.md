@@ -24,7 +24,7 @@ A **Node.js + Express.js** backend project that allows users to **register, logi
 ##  Tech Stack
 
 - **Backend**: Node.js, Express.js  
-- **Database**: MySQL  
+- **Database**: MySQL
 - **Authentication**: JWT (JSON Web Token)  
 - **Distance Sorting**: Haversine formula  
 
