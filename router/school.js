@@ -4,9 +4,13 @@ const {userValidate}=require('../middleware/userValidate');
 
 const router =express.Router()
 
-
+//create school router 
 router.post('/create-school',userValidate,createSchool)
-router.post('/update-school/:id',userValidate,updateSchools)
+
+//update school router
+router.post('/update-school',userValidate,updateSchools)
+
+//get all school router 
 
 router.post('/all-school',getAllSchoolBydistance)
 

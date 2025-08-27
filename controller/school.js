@@ -1,14 +1,15 @@
 const connection = require('../config/database');
+const { sendschoolcreationupdate, sendschoolupdatequickly } = require('../utils/mailsend')
 
 
-
-//creating the school 
+//creating the school with middleware 
 
 
 const createSchool = async (req, res) => {
     try {
         const { name, address, latitude, longitude } = req.body;
         const userId = req.user.id;
+        const email = req.user.email;
         console.log("userId", userId)
 
         if (!name || !address || !latitude || !longitude) {
@@ -38,6 +39,8 @@ const createSchool = async (req, res) => {
             [userId, school_id]
         );
 
+        await sendschoolcreationupdate(email, name, address, latitude, longitude);
+
         return res.status(201).json({
             success: true,
             message: "School added successfully",
@@ -53,41 +56,58 @@ const createSchool = async (req, res) => {
         });
     }
 };
-
 const updateSchools = async (req, res) => {
-
     try {
+        const {id} = req.body;
+        const userId = req.user.id;
+        const email = req.user.email;
 
-        const { id } = req.params;
-        const userId = req.user.id
-        const { name, address, lattitude, longitude } = req.body
-        const [findschoolcreator] = await connection.query('select * FROM user_school where school_id=? AND user_id=?', [id, userId]);
-        console.log(findschoolcreator)
-       if (findschoolcreator.length === 0) {
+        if (isNaN(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid school id"
+            });
+        }
+
+        const { name, address, latitude, longitude } = req.body;
+
+        // Check if this user is linked to the school
+        const [findschoolcreator] = await connection.query(
+            'SELECT * FROM user_school WHERE school_id=? AND user_id=?',
+            [id, userId]
+        );
+
+        if (findschoolcreator.length === 0) {
             return res.status(403).json({
                 success: false,
                 message: "You are not authorized to update this school"
             });
         }
+
+        // Update the school
         const [updateschool] = await connection.query(
-            'UPDATE school SET name=?,address=?,latitude=?,longitude=? WHERE id=?',
-            [name, address, lattitude, longitude, id])
+            'UPDATE school SET name=?, address=?, latitude=?, longitude=? WHERE id=?',
+            [name, address, latitude, longitude, id]
+        );
 
         if (updateschool.affectedRows === 0) {
-            return res.status(400).jso({
+            return res.status(400).json({
                 success: false,
-                message: `not able to update the school`
-            })
+                message: `Not able to update the school`
+            });
         }
 
-        return res.status(201).json({
+        // Send email after successful update
+        await sendschoolupdatequickly(email, name, address, latitude, longitude);
+
+        return res.status(200).json({
             success: true,
-            message: `school updated successfully`,
-        })
+            message: `School updated successfully`
+        });
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Server error"
         });
@@ -151,4 +171,7 @@ const getAllSchoolBydistance = async (req, res) => {
         });
     }
 };
+
+
+
 module.exports = { createSchool, getAllSchoolBydistance, updateSchools }
